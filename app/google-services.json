@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "72714829077",
+    "project_id": "bloomus-7c1f9",
+    "storage_bucket": "bloomus-7c1f9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:72714829077:android:8842cca885e1b3ebda7d1c",
+        "android_client_info": {
+          "package_name": "com.yurikolesnikov.bloomus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "72714829077-8p24uf73235qtovjojsql7ecdde6cng8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yurikolesnikov.bloomus",
+            "certificate_hash": "03f8677307cc829deeb04ea070c258607e323e66"
+          }
+        },
+        {
+          "client_id": "72714829077-unnat6bs0segrikr8loli6m7lmt0v85n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDlnAPic3DxKXclvCzwhPtDQq5E0ZTxS4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "72714829077-unnat6bs0segrikr8loli6m7lmt0v85n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
