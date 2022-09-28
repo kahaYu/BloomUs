@@ -31,7 +31,7 @@ import com.yurikolesnikov.designsystem.theme.BloomUsTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Destinations(start = true)
 @Composable
-fun LogInScreen(
+fun LogInScreen (
     navigator: DestinationsNavigator,
     viewModel: LogInScreenViewModel = hiltViewModel()
 ) {
