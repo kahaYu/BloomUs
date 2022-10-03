@@ -1,5 +1,6 @@
 package com.yurikolesnikov.login.di
 
+import androidx.lifecycle.SavedStateHandle
 import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
@@ -15,4 +16,5 @@ object LogInModule {
     @Provides
     @Singleton
     fun providesFirebaseAuth() = FirebaseAuth.getInstance()
+
 }

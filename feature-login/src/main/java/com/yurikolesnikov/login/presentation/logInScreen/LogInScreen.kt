@@ -1,5 +1,6 @@
 package com.yurikolesnikov.login.presentation.logInScreen
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -23,22 +24,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.navigation.NavOptionsBuilder
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.yurikolesnikov.designsystem.theme.BloomUsTheme
+import com.yurikolesnikov.login.di.ViewModelFactoryProvider
+import dagger.hilt.android.EntryPointAccessors
+import javax.inject.Inject
+
+@RootNavGraph(start = true)
+@Destination
+@Composable
+fun LogInScreen(
+    navigator: DestinationsNavigator,
+    //viewModel: LogInScreenViewModel = hiltViewModel(),
+    showToastMessage: (String) -> Unit
+) {
+
+    val viewModel: LogInScreenViewModel = logInScreenViewModel(showToastMessage)
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LogInScreenContent(state = state, onEvent = viewModel::onEvent)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Destinations(start = true)
 @Composable
-fun LogInScreen (
-    navigator: DestinationsNavigator,
-    viewModel: LogInScreenViewModel = hiltViewModel()
+private fun LogInScreenContent(
+    state: LogInScreenState,
+    onEvent: (LogInScreenEvent) -> Unit
 ) {
-    val state = viewModel.state.value
-    val context = LocalContext.current
     val localFocusManager = LocalFocusManager.current
-
     val infiniteTransition = rememberInfiniteTransition()
     val logInButtonWidth by infiniteTransition.animateFloat(
         initialValue = 0.7f,
@@ -48,25 +67,6 @@ fun LogInScreen (
             repeatMode = RepeatMode.Reverse
         )
     )
-
-    LaunchedEffect(key1 = 1) {
-        viewModel
-            .toastMessage
-            .collect { message ->
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            }
-    }
-    LaunchedEffect(key1 = 1) {
-        viewModel
-            .destination
-            .collect { destination ->
-                when (destination) {
-                    Destinations.NEXT_SCREEN -> {
-                        navigator.navigate(NextScreenDestination())
-                    }
-                }
-            }
-    }
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()
@@ -77,7 +77,6 @@ fun LogInScreen (
                 })
             }
     ) {
-
         val (
             emailInputField,
             passwordInputField,
@@ -89,11 +88,10 @@ fun LogInScreen (
             signInMethodsPanel
         ) = createRefs()
         val bottomGuideline = createGuidelineFromTop(0.8f)
-
         OutlinedTextField(
             value = state.emailInputField,
             onValueChange = { text ->
-                viewModel.onEvent(LogInScreenEvent.OnEmailInputChange(text))
+                onEvent(LogInScreenEvent.OnEmailInputChange(text))
             },
             maxLines = 1,
             modifier = Modifier
@@ -123,7 +121,7 @@ fun LogInScreen (
         OutlinedTextField(
             value = state.passwordInputField,
             onValueChange = { text ->
-                viewModel.onEvent(LogInScreenEvent.OnPasswordInputChange(text))
+                onEvent(LogInScreenEvent.OnPasswordInputChange(text))
             },
             visualTransformation = PasswordVisualTransformation(),
             maxLines = 1,
@@ -175,7 +173,7 @@ fun LogInScreen (
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             onClick = {
-                viewModel.onEvent(LogInScreenEvent.OnLogInButtonClick)
+                onEvent(LogInScreenEvent.OnLogInButtonClick)
             }
         ) {
             Text(
@@ -272,35 +270,28 @@ fun LogInScreen (
     }
 }
 
-@Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun PreviewLogInScreen() {
+fun logInScreenViewModel(showToastMessage: (String) -> Unit): LogInScreenViewModel {
+    val factory = EntryPointAccessors.fromActivity(
+        LocalContext.current as Activity,
+        ViewModelFactoryProvider::class.java
+    ).logInScreenViewModelFactory()
 
+    val savedStateHandle = SavedStateHandle()
+
+    return viewModel(factory = LogInScreenViewModel.providesFactory(factory, savedStateHandle, showToastMessage))
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LogInScreenContentPreview() {
     BloomUsTheme {
-        val navigatorDummy = object : DestinationsNavigator {
-            override fun clearBackStack(route: String): Boolean = false
-            override fun navigate(
-                route: String,
-                onlyIfResumed: Boolean,
-                builder: NavOptionsBuilder.() -> Unit
-            ) {
-            }
-
-            override fun navigateUp(): Boolean = false
-            override fun popBackStack(): Boolean = false
-            override fun popBackStack(
-                route: String,
-                inclusive: Boolean,
-                saveState: Boolean
-            ): Boolean =
-                false
-        }
-
-        val viewModelDummy = object : ViewModel() {}
-
-        LogInScreen(
-            navigatorDummy,
-            hiltViewModel()
+        LogInScreenContent(
+            LogInScreenState(),
+            { LogInScreenEvent.OnLogInButtonClick }
         )
     }
 }
+
+
+

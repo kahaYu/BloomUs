@@ -1,51 +1,55 @@
 package com.yurikolesnikov.login.presentation.logInScreen
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@HiltViewModel
-class LogInScreenViewModel @Inject constructor(
-    private val auth: FirebaseAuth
+class LogInScreenViewModel @AssistedInject constructor(
+    private val auth: FirebaseAuth,
+    @Assisted private val savedStateHandle: SavedStateHandle,
+    @Assisted private val showToastMessage: (String) -> Unit
 ) : ViewModel() {
 
-    private val _state = mutableStateOf(LogInScreenState())
-    val state: State<LogInScreenState> = _state
+    val state =
+        savedStateHandle.getStateFlow(key = "LogInScreenState", initialValue = LogInScreenState())
 
-    private val _toastMessage = MutableSharedFlow<String>()
-    val toastMessage = _toastMessage.asSharedFlow()
-
-    private val _destination = MutableSharedFlow<Destinations>()
-    val destination = _destination.asSharedFlow()
+    //var showToastMessage: (String) -> Unit = {}
 
     fun onEvent(event: LogInScreenEvent) {
         when (event) {
             is LogInScreenEvent.OnEmailInputChange -> {
-                _state.value = _state.value.copy(emailInputField = event.text)
+                savedStateHandle["LogInScreenState"] =
+                    state.value.copy(emailInputField = event.text)
             }
             is LogInScreenEvent.OnPasswordInputChange -> {
-                _state.value = _state.value.copy(passwordInputField = event.text)
+                savedStateHandle["LogInScreenState"] =
+                    state.value.copy(passwordInputField = event.text)
             }
             is LogInScreenEvent.OnLogInButtonClick -> {
-
+                showToastMessage.invoke("Message")
             }
-            is LogInScreenEvent.OnRegisterButtonClick -> registerUser()
+            is LogInScreenEvent.OnRegisterButtonClick -> {}//registerUser()
         }
     }
 
-    private fun registerUser() {
+    /*private fun registerUser() {
         val email = state.value.emailInputField
         val password = state.value.passwordInputField
-        if (email.isNotEmpty() &&  password.isNotEmpty()) {
+        if (email.isNotEmpty() && password.isNotEmpty()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     auth.createUserWithEmailAndPassword(email, password).await()
@@ -55,13 +59,23 @@ class LogInScreenViewModel @Inject constructor(
                 }
             }
         }
+    }*/
+
+    @AssistedFactory
+    interface LogInScreenViewModelFactory {
+        fun create(savedStateHandle: SavedStateHandle, showToastMessage: (String) -> Unit): LogInScreenViewModel
     }
 
-    private suspend fun showToast(message: String) {
-        _toastMessage.emit(message)
-    }
-
-    private suspend fun navigate(destination: Destinations) {
-        _destination.emit(destination)
+    @Suppress("UNCHECKED_CAST")
+    companion object {
+        fun providesFactory(
+            assistedFactory: LogInScreenViewModelFactory,
+            savedStateHandle: SavedStateHandle,
+            showToastMessage: (String) -> Unit
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return assistedFactory.create(savedStateHandle, showToastMessage) as T
+            }
+        }
     }
 }

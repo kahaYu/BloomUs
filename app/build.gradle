@@ -5,6 +5,7 @@ plugins {
     id 'com.google.devtools.ksp' version "$ksp_version"
     id 'dagger.hilt.android.plugin'
     id 'kotlin-kapt'
+    id "kotlin-parcelize"
 }
 
 android {
@@ -89,6 +90,7 @@ dependencies {
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-compiler:$hilt_version"
     kapt "com.google.dagger:hilt-android-compiler:$hilt_version"
+    implementation "androidx.hilt:hilt-navigation-compose:$hilt_navigation"
 
     //Firebase
     implementation platform ("com.google.firebase:firebase-bom:$firebase_bom_version")

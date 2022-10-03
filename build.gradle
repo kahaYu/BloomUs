@@ -20,6 +20,7 @@ buildscript {
         material3_for_compose_version = '1.0.0-beta02'
         activity_compose_version = "1.5.1"
         constraintlayout_compose_version = "1.0.1"
+        lifecycle_extensions_version = "2.2.0"
     }
     repositories {
         google()
