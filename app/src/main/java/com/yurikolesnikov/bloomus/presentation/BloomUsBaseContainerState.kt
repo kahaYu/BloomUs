@@ -8,13 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.parcelize.Parcelize
 
-@Composable
-fun rememberBloomUsBaseContainerState(): MutableState<BloomUsBaseContainerState> {
-    return remember { mutableStateOf(BloomUsBaseContainerState()) }
-}
 @Parcelize
 data class BloomUsBaseContainerState(
-    //val shouldShowToast: Boolean = false,
-    val toastMessage: String = "",
     val shouldShowProgressBar: Boolean = false
 ) : Parcelable

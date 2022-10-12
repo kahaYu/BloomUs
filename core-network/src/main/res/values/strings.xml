@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_firebase_is_not_initialized">Error: Firebase is not initialized.\nRefer to developer.</string>
+</resources>

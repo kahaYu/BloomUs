@@ -1,3 +1,4 @@
+/*
 package com.yurikolesnikov.login.di
 
 import com.yurikolesnikov.login.presentation.logInScreen.LogInScreenViewModel
@@ -14,4 +15,4 @@ interface ViewModelFactoryProvider {
 
     fun logInScreenViewModelFactory(): LogInScreenViewModel.LogInScreenViewModelFactory
 
-}
+}*/

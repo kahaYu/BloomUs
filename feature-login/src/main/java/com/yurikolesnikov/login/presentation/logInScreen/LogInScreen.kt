@@ -1,7 +1,11 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.yurikolesnikov.login.presentation.logInScreen
 
 import android.app.Activity
-import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -23,30 +26,28 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.createSavedStateHandle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import com.google.android.gms.auth.api.identity.BeginSignInResult
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.yurikolesnikov.designsystem.theme.BloomUsTheme
-import com.yurikolesnikov.login.di.ViewModelFactoryProvider
-import dagger.hilt.android.EntryPointAccessors
-import javax.inject.Inject
 
 @RootNavGraph(start = true)
 @Destination
 @Composable
 fun LogInScreen(
-    navigator: DestinationsNavigator,
-    //viewModel: LogInScreenViewModel = hiltViewModel(),
-    showToastMessage: (String) -> Unit
+    showToastMessage: (String) -> Unit,
+    showProgressBar: (Boolean) -> Unit,
+    navigateTo: (DestinationFromLogInScreen) -> Unit
 ) {
-
-    val viewModel: LogInScreenViewModel = logInScreenViewModel(showToastMessage)
+    val viewModel: LogInScreenViewModel = logInScreenViewModel(showToastMessage, showProgressBar, navigateTo)
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
+
+    listenOneTapSignIn(state = state, onEvent = viewModel::onEvent)
 
     LogInScreenContent(state = state, onEvent = viewModel::onEvent)
 }
@@ -188,7 +189,7 @@ private fun LogInScreenContent(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier
                 .clickable {
-                    /*TODO*/
+                    onEvent(LogInScreenEvent.OnRegisterButtonClick)
                 }
                 .constrainAs(registerText) {
                     top.linkTo(passwordRegisterSpacer.bottom)
@@ -239,7 +240,7 @@ private fun LogInScreenContent(
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(50)) // Makes ripple round
                     .clickable {
-
+                        onEvent(LogInScreenEvent.OnGoogleLogInButtonClick)
                     }
             )
             Spacer(modifier = Modifier.width(20.dp))
@@ -251,7 +252,7 @@ private fun LogInScreenContent(
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(50))
                     .clickable {
-
+                        /*TODO*/
                     }
             )
             Spacer(modifier = Modifier.width(20.dp))
@@ -263,7 +264,7 @@ private fun LogInScreenContent(
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(50))
                     .clickable {
-
+                        /*TODO*/
                     }
             )
         }
@@ -271,15 +272,48 @@ private fun LogInScreenContent(
 }
 
 @Composable
-fun logInScreenViewModel(showToastMessage: (String) -> Unit): LogInScreenViewModel {
-    val factory = EntryPointAccessors.fromActivity(
-        LocalContext.current as Activity,
-        ViewModelFactoryProvider::class.java
-    ).logInScreenViewModelFactory()
+private fun listenOneTapSignIn(state: LogInScreenState, onEvent: (LogInScreenEvent) -> Unit) {
+    if (state.beginSignInResult != null)
+        startGoogleChoiceActivity(signInResult = state.beginSignInResult, onEvent = onEvent)
+}
+
+@Composable
+private fun startGoogleChoiceActivity(signInResult: BeginSignInResult, onEvent: (LogInScreenEvent) -> Unit) {
+    val googleChoiceActivityLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        onEvent(LogInScreenEvent.GoogleChoiceWindowResultIsReceived)
+        if (result.resultCode == Activity.RESULT_OK) {
+            onEvent(LogInScreenEvent.LogInInUserWithGoogle(result))
+        }
+    }
+    LaunchedEffect(key1 = signInResult) {
+        val intent = IntentSenderRequest.Builder(signInResult.pendingIntent.intentSender).build()
+        googleChoiceActivityLauncher.launch(intent)
+    }
+}
+
+@Composable
+private fun logInScreenViewModel(
+    showToastMessage: (String) -> Unit,
+    showProgressBar: (Boolean) -> Unit,
+    navigateTo: (DestinationFromLogInScreen) -> Unit
+): LogInScreenViewModel {
 
     val savedStateHandle = SavedStateHandle()
 
-    return viewModel(factory = LogInScreenViewModel.providesFactory(factory, savedStateHandle, showToastMessage))
+    val factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return LogInScreenViewModel(
+                savedStateHandle,
+                showToastMessage,
+                showProgressBar,
+                navigateTo
+            ) as T
+        }
+    }
+    return ViewModelProvider(
+        LocalViewModelStoreOwner.current!!,
+        factory
+    ).get(LogInScreenViewModel::class.java)
 }
 
 @Preview(showBackground = true)
